@@ -9,7 +9,7 @@ import SwiftUI
 import Combine
 import Foundation
 
-struct ContentView: View {
+struct PomodoroView: View {
     
     @State private var workTime = 25
     @State private var chillTime = 5
@@ -39,6 +39,12 @@ struct ContentView: View {
     
     enum Activity: String {
         case work, chill, dinner
+    }
+    
+    var viewModel: PomodoroViewModel?
+    
+    init(viewModel: PomodoroViewModel) {
+        self.viewModel = viewModel
     }
     
     var body: some View {
@@ -219,6 +225,8 @@ struct ContentView: View {
         buttonMode = .pause
         secondsForTimer = workTime * 60
         
+        viewModel?.startTimer(UserChoise(pickTime: dateFormatter(secondsForTimer)))
+        
         step = (Double(screenSize.height)/Double(workTime*60))/(Double(screenSize.height)/100)
         
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { _ in
@@ -232,6 +240,8 @@ struct ContentView: View {
     private func timerPause() {
         buttonMode = .resume
         
+        viewModel?.pauseTimer()
+        
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { _ in
             secondsForTimer -= 0
@@ -240,6 +250,8 @@ struct ContentView: View {
     
     private func timerResume() {
         self.buttonMode = .pause
+        
+        viewModel?.resumeTimer(UserChoise(pickTime: dateFormatter(secondsForTimer), mode: Mode.resume.rawValue, activity: Activity.work.rawValue))
         
         self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { _ in
             secondsForTimer -= 1
@@ -255,6 +267,8 @@ struct ContentView: View {
         secondsForTimer = workTime * 60
         percent = 0
         currentActivity = Activity.work.rawValue
+        
+        viewModel?.resetTimer(UserChoise(pickTime: dateFormatter(secondsForTimer), mode: Mode.start.rawValue, activity: Activity.work.rawValue))
     }
     
     private func timerSupport() {
@@ -267,11 +281,13 @@ struct ContentView: View {
                     nextActivity = Activity.dinner.rawValue
                     secondsForTimer = chillTime * 60
                     step = -(Double(screenSize.height)/Double(chillTime*60))/(Double(screenSize.height)/100)
+                    viewModel?.updateActivity(UserChoise(pickTime: dateFormatter(secondsForTimer), mode: Mode.start.rawValue, activity: Activity.chill.rawValue))
                 } else {
                     currentActivity = Activity.chill.rawValue
                     nextActivity = Activity.work.rawValue
                     secondsForTimer = chillTime * 60
                     step = -(Double(screenSize.height)/Double(chillTime*60))/(Double(screenSize.height)/100)
+                    viewModel?.updateActivity(UserChoise(pickTime: dateFormatter(secondsForTimer), mode: Mode.start.rawValue, activity: Activity.chill.rawValue))
                 }
             case Activity.chill.rawValue:
                 if currentSetsCount == setsCount {
@@ -280,11 +296,13 @@ struct ContentView: View {
                     secondsForTimer = breakTime * 60
                     step = (Double(screenSize.height)/Double(breakTime*60))/(Double(screenSize.height)/100)
                     currentSetsCount = 0
+                    viewModel?.updateActivity(UserChoise(pickTime: dateFormatter(secondsForTimer), mode: Mode.start.rawValue, activity: Activity.dinner.rawValue))
                 } else {
                     currentActivity = Activity.work.rawValue
                     nextActivity = Activity.chill.rawValue
                     secondsForTimer = workTime * 60
                     step = (Double(screenSize.height)/Double(workTime*60))/(Double(screenSize.height)/100)
+                    viewModel?.updateActivity(UserChoise(pickTime: dateFormatter(secondsForTimer), mode: Mode.start.rawValue, activity: Activity.work.rawValue))
                 }
             case Activity.dinner.rawValue:
                 currentActivity = Activity.work.rawValue
@@ -294,16 +312,24 @@ struct ContentView: View {
                 currentSetsCount = 0
                 timer?.invalidate()
                 titleWord = Mode.start.rawValue
+                viewModel?.updateActivity(UserChoise(pickTime: dateFormatter(secondsForTimer), mode: Mode.start.rawValue, activity: Activity.work.rawValue))
             default:
                 print("default")
             }
         }
     }
+    
+    private func dateFormatter(_ time: Int) -> Date {
+
+        return Date().addingTimeInterval(TimeInterval(time))
+    }
+    
+
 }
 
-struct ContentView_Previews: PreviewProvider {
+struct PomodoroView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        PomodoroView(viewModel: PomodoroViewModel())
     }
 }
 

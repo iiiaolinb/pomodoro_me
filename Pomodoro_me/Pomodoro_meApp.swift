@@ -11,7 +11,7 @@ import SwiftUI
 struct Pomodoro_meApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            PomodoroView(viewModel: PomodoroViewModel())
         }
     }
 }
